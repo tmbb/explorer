@@ -172,6 +172,16 @@ defmodule Explorer.PolarsBackend.Native do
   def df_nil_count(_df), do: err()
   def df_re_dtype(_pattern), do: err()
 
+  # Distributions
+
+  def df_draw_from_normal(_seed, _mu, _sigma, _nr_of_draws), do: err()
+  def df_draw_from_beta(_seed, _a, _b, _nr_of_draws), do: err()
+  def df_draw_from_dirichlet(_seed, _alphas, _nr_of_draws), do: err()
+  def df_draw_from_unit_sphere(_seed, _nr_of_draws), do: err()
+  def df_draw_from_unit_ball(_seed, _nr_of_draws), do: err()
+  def df_draw_from_unit_circle(_seed, _nr_of_draws), do: err()
+  def df_draw_from_unit_disc(_seed, _nr_of_draws), do: err()
+
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
 

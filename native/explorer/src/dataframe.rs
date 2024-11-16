@@ -2,6 +2,18 @@ use polars::prelude::*;
 use polars_ops::pivot::{pivot_stable, PivotAgg};
 
 use polars::export::{arrow, arrow::ffi};
+
+use rand_distr::{
+    Distribution, Normal, Beta,
+    UnitSphere, UnitCircle, UnitBall, UnitDisc,
+    Dirichlet
+};
+
+use rand_chacha::rand_core::SeedableRng;
+use rand_chacha::ChaCha12Rng;
+
+use std::format;
+use std::iter;
 use std::collections::HashMap;
 
 use crate::datatypes::ExSeriesDtype;
@@ -479,3 +491,183 @@ pub fn df_re_dtype(pattern: &str) -> Result<ExSeriesDtype, ExplorerError> {
     let ex_dtype = ExSeriesDtype::try_from(s.dtype())?;
     Ok(ex_dtype)
 }
+
+macro_rules! draw_from_univariate_dist {
+    ($seed:expr; $dist:expr; $nr_of_draws:expr) => {
+        {
+            let dist = $dist.unwrap();
+            let mut rng = ChaCha12Rng::seed_from_u64($seed);
+    
+            let draws: Vec<u64> =
+                iter::successors(Some(0 as u64), |n| n.checked_add(1))
+                .take($nr_of_draws as usize)
+                .collect();
+    
+            let values: Vec<f64> =
+                iter::repeat_with(|| dist.sample(&mut rng))
+                .take($nr_of_draws as usize)
+                .collect();
+    
+            let column_draws: Series = Series::new("draw".into(), &draws);
+            let column_values: Series = Series::new("value".into(), &values);
+    
+            let df: PolarsResult<DataFrame> = DataFrame::new(vec![column_draws, column_values]);
+    
+            Ok(ExDataFrame::new(df?))
+        }
+    };
+}
+
+macro_rules! draw_from_xyz_dist {
+    ($seed:expr; $dist:expr; $nr_of_draws:expr) => {
+        {
+            let mut rng = ChaCha12Rng::seed_from_u64($seed);
+
+            let draws: Vec<u64> =
+                (0..$nr_of_draws)
+                .into_iter()
+                .collect();
+
+            let mut x: Vec<f64> = Vec::with_capacity($nr_of_draws as usize);
+            let mut y: Vec<f64> = Vec::with_capacity($nr_of_draws as usize);
+            let mut z: Vec<f64> = Vec::with_capacity($nr_of_draws as usize);
+            let points =
+                iter::repeat_with(|| $dist.sample(&mut rng))
+                .take($nr_of_draws as usize);
+
+            for point in points {
+                x.push(point[0]);
+                y.push(point[1]);
+                z.push(point[2]);
+            }
+
+            let column_draws = Series::new("draw".into(), &draws);
+            let column_x = Series::new("x".into(), &x);
+            let column_y = Series::new("y".into(), &y);
+            let column_z = Series::new("z".into(), &z);
+
+            let df: PolarsResult<DataFrame> =
+                DataFrame::new(vec![
+                    column_draws,
+                    column_x,
+                    column_y,
+                    column_z
+                ]);
+
+            Ok(ExDataFrame::new(df?))
+        }
+    };
+}
+
+macro_rules! draw_from_xy_dist {
+    ($seed:expr; $dist:expr; $nr_of_draws:expr) => {
+        {
+            let mut rng = ChaCha12Rng::seed_from_u64($seed);
+
+            let draws: Vec<u64> =
+                (0..$nr_of_draws)
+                .into_iter()
+                .collect();
+
+            let mut x: Vec<f64> = Vec::with_capacity($nr_of_draws as usize);
+            let mut y: Vec<f64> = Vec::with_capacity($nr_of_draws as usize);
+            let points =
+                iter::repeat_with(|| $dist.sample(&mut rng))
+                .take($nr_of_draws as usize);
+
+            for point in points {
+                x.push(point[0]);
+                y.push(point[1]);
+            }
+
+            let column_draws = Series::new("draw".into(), &draws);
+            let column_x = Series::new("x".into(), &x);
+            let column_y = Series::new("y".into(), &y);
+
+            let df: PolarsResult<DataFrame> =
+                DataFrame::new(vec![
+                    column_draws,
+                    column_x,
+                    column_y
+                ]);
+
+            Ok(ExDataFrame::new(df?))
+        }
+    };
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_normal(seed: u64, mu: f64, sigma: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; Normal::new(mu, sigma); nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_beta(seed: u64, a: f64, b: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; Beta::new(a, b); nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_dirichlet(seed: u64, alpha: Vec<f64>, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    let k = alpha.len() as u64;
+    let dist = Dirichlet::new(&alpha[..]).unwrap();
+    let mut rng = ChaCha12Rng::seed_from_u64(seed);
+
+    let draws: Vec<u64> =
+        (0..nr_of_draws)
+        .into_iter()
+        .collect();
+
+    let variables: Vec<f64> =
+        (0..nr_of_draws)
+        .into_iter()
+        .map(|_index| dist.sample(&mut rng))
+        .flat_map(|result| result)
+        .collect();
+
+    let mut columns: Vec<Series> = vec![Series::new("draw".into(), &draws)];
+    
+    for variable_index in 0..k {
+        let mut col: Vec<f64> = Vec::with_capacity(nr_of_draws as usize);
+
+        for draw in 0..nr_of_draws {
+            col.push(variables[(draw * k + variable_index) as usize])
+        }
+
+        let column_name = format!("x{}", variable_index + 1).into();
+        let column: Series = Series::new(column_name, &col);
+
+        columns.push(column);
+    }
+
+    let df: PolarsResult<DataFrame> = DataFrame::new(columns);
+
+    Ok(ExDataFrame::new(df?))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_unit_sphere(seed: u64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_xyz_dist!(seed; UnitSphere; nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_unit_ball(seed: u64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_xyz_dist!(seed; UnitBall; nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_unit_circle(seed: u64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_xy_dist!(seed; UnitCircle; nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_unit_disc(seed: u64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_xy_dist!(seed; UnitDisc; nr_of_draws)
+}
+

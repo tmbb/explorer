@@ -410,6 +410,8 @@ defmodule Explorer.DataFrame do
     {%{current_value | name: column}, new_df}
   end
 
+  # Distributions - TODO
+
   # IO
 
   @doc """

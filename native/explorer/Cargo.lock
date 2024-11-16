@@ -547,6 +547,8 @@ dependencies = [
  "polars",
  "polars-ops",
  "rand",
+ "rand_chacha",
+ "rand_distr",
  "rand_pcg",
  "rustler",
  "thiserror",
