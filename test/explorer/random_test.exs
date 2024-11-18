@@ -27,7 +27,7 @@ defmodule Explorer.RandomTest do
 
     df = Random.draw_from_normal(0.0, 1.0, 5)
 
-    assert Series.to_list(df[:value]) == [
+    assert Series.to_list(df[:x]) == [
       1.5517820245173133,
       1.321939712924412,
       0.02191481628203684,
@@ -55,7 +55,7 @@ defmodule Explorer.RandomTest do
       df2 = Random.draw_from_normal(mu, sigma, nr_of_draws)
 
       # The values should be equal
-      assert Series.to_list(df1[:value]) == Series.to_list(df2[:value])
+      assert Series.to_list(df1[:x]) == Series.to_list(df2[:x])
     end
   end
 
@@ -136,7 +136,7 @@ defmodule Explorer.RandomTest do
         :rand.seed(:exro928ss, seed)
 
         df = Random.draw_from_normal(mu, sigma, nr_of_draws)
-        values = Series.to_list(df[:value])
+        values = Series.to_list(df[:x])
 
         # The values should be all different
         assert values == Enum.uniq(values)

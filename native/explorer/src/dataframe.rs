@@ -4,7 +4,8 @@ use polars_ops::pivot::{pivot_stable, PivotAgg};
 use polars::export::{arrow, arrow::ffi};
 
 use rand_distr::{
-    Distribution, Normal, Beta,
+    Distribution, Normal, Beta, SkewNormal,
+    Cauchy, Geometric, Hypergeometric, LogNormal,
     UnitSphere, UnitCircle, UnitBall, UnitDisc,
     Dirichlet
 };
@@ -503,13 +504,13 @@ macro_rules! draw_from_univariate_dist {
                 .take($nr_of_draws as usize)
                 .collect();
     
-            let values: Vec<f64> =
+            let values: Vec<_> =
                 iter::repeat_with(|| dist.sample(&mut rng))
                 .take($nr_of_draws as usize)
                 .collect();
     
             let column_draws: Series = Series::new("draw".into(), &draws);
-            let column_values: Series = Series::new("value".into(), &values);
+            let column_values: Series = Series::new("x".into(), &values);
     
             let df: PolarsResult<DataFrame> = DataFrame::new(vec![column_draws, column_values]);
     
@@ -607,6 +608,43 @@ pub fn df_draw_from_beta(seed: u64, a: f64, b: f64, nr_of_draws: u64)
             -> Result<ExDataFrame, ExplorerError> {
     draw_from_univariate_dist!(seed; Beta::new(a, b); nr_of_draws)
 }
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_skew_normal(seed: u64, loc: f64, scale: f64, shape: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; SkewNormal::new(loc, scale, shape); nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_cauchy(seed: u64, median: f64, scale: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; Cauchy::new(median, scale); nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_geometric(seed: u64, p: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; Geometric::new(p); nr_of_draws)
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_hypergeometric(seed: u64, pop_size: u64, success_states: u64,
+                                   sample_size: u64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(
+        seed;
+        Hypergeometric::new(pop_size, success_states, sample_size);
+        nr_of_draws
+    )
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn df_draw_from_log_normal(seed: u64, mean: f64, variance: f64, nr_of_draws: u64)
+            -> Result<ExDataFrame, ExplorerError> {
+    draw_from_univariate_dist!(seed; LogNormal::new(mean, variance); nr_of_draws)
+}
+
+// Multivariate distributions
 
 #[rustler::nif(schedule = "DirtyCpu")]
 pub fn df_draw_from_dirichlet(seed: u64, alpha: Vec<f64>, nr_of_draws: u64)

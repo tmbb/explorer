@@ -174,8 +174,16 @@ defmodule Explorer.PolarsBackend.Native do
 
   # Distributions
 
+  # Univariate distributions
   def df_draw_from_normal(_seed, _mu, _sigma, _nr_of_draws), do: err()
   def df_draw_from_beta(_seed, _a, _b, _nr_of_draws), do: err()
+  def df_draw_from_skew_normal(_seed, _loc, _scale, _shape, _nr_of_draws), do: err()
+  def df_draw_from_cauchy(_seed, _median, _scale, _nr_of_draws), do: err()
+  def df_draw_from_geometric(_seed, _p, _nr_of_draws), do: err()
+  def df_draw_from_hypergeometric(_seed, _pop_size, _success_states, _sample_size, _nr_of_draws), do: err()
+  def df_draw_from_log_normal(_seed, _mean, _variance, _nr_of_draws), do: err()
+
+  # Multivariate distributions
   def df_draw_from_dirichlet(_seed, _alphas, _nr_of_draws), do: err()
   def df_draw_from_unit_sphere(_seed, _nr_of_draws), do: err()
   def df_draw_from_unit_ball(_seed, _nr_of_draws), do: err()
