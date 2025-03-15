@@ -1736,3 +1736,203 @@ pub fn s_re_named_captures(s1: ExSeries, pattern: &str) -> Result<ExSeries, Expl
         .clone();
     Ok(ExSeries::new(s2))
 }
+
+// Statistical distributions
+
+use statrs::distribution::{
+    Continuous, ContinuousCDF,
+    Beta, Cauchy, Chi, ChiSquared, Dirac, Erlang, Exp,
+    FisherSnedecor, Gamma, Gumbel, InverseGamma, Laplace,
+    // LogNormal, NegativeBinomial, Normal, Pareto,
+    // StudentsT, Triangular, Uniform, Weibull
+};
+
+macro_rules! define_continuous_dist_functions {
+    // Distributions with 1 parameter
+    ($dist_struct:ident;
+     $pdf_name:ident; $cdf_name:ident; $inv_cdf_name:ident;
+     $p1:ident : $t1:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $pdf_name(s: ExSeries, $p1: $t1)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.pdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $cdf_name(s: ExSeries, $p1: $t1)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.cdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $inv_cdf_name(s: ExSeries, $p1: $t1)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.inverse_cdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+    };
+
+    // Distributions with 2 parameters
+    ($dist_struct:ident;
+     $pdf_name:ident; $cdf_name:ident; $inv_cdf_name:ident;
+     $p1:ident : $t1:ident ; $p2:ident : $t2:ident) => {
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $pdf_name(s: ExSeries, $p1: $t1, $p2: $t2)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1, $p2).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.pdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $cdf_name(s: ExSeries, $p1: $t1, $p2: $t2)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1, $p2).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.cdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+
+        #[rustler::nif(schedule = "DirtyCpu")]
+        pub fn $inv_cdf_name(s: ExSeries, $p1: $t1, $p2: $t2)
+                -> Result<ExSeries, ExplorerError> {
+            let dist = $dist_struct::new($p1, $p2).unwrap();
+            let s1 = s.f64()?.apply_values(|x| dist.inverse_cdf(x)).into();
+            Ok(ExSeries::new(s1))
+        }
+    };
+
+    // Distributions with 3 parameters
+    ($dist_struct:ident;
+        $pdf_name:ident; $cdf_name:ident; $inv_cdf_name:ident;
+        $p1:ident : $t1:ident ; $p2:ident : $t2:ident; $p3:ident : $t3:ident) => {
+           #[rustler::nif(schedule = "DirtyCpu")]
+           pub fn $pdf_name(s: ExSeries, $p1: $t1, $p2: $t2, $p3: $t3)
+                   -> Result<ExSeries, ExplorerError> {
+               let dist = $dist_struct::new($p1, $p2, $p3).unwrap();
+               let s1 = s.f64()?.apply_values(|x| dist.pdf(x)).into();
+               Ok(ExSeries::new(s1))
+           }
+   
+           #[rustler::nif(schedule = "DirtyCpu")]
+           pub fn $cdf_name(s: ExSeries, $p1: $t1, $p2: $t2, $p3: $t3)
+                   -> Result<ExSeries, ExplorerError> {
+               let dist = $dist_struct::new($p1, $p2, $p3).unwrap();
+               let s1 = s.f64()?.apply_values(|x| dist.cdf(x)).into();
+               Ok(ExSeries::new(s1))
+           }
+   
+           #[rustler::nif(schedule = "DirtyCpu")]
+           pub fn $inv_cdf_name(s: ExSeries, $p1: $t1, $p2: $t2, $p3: $t3)
+                   -> Result<ExSeries, ExplorerError> {
+               let dist = $dist_struct::new($p1, $p2, $p3).unwrap();
+               let s1 = s.f64()?.apply_values(|x| dist.inverse_cdf(x)).into();
+               Ok(ExSeries::new(s1))
+           }
+       };
+}
+
+define_continuous_dist_functions!(
+    Beta; s_beta_pdf; s_beta_cdf; s_beta_inverse_cdf;
+    shape_a: f64; shape_b: f64
+);
+
+define_continuous_dist_functions!(
+    Cauchy; s_cauchy_pdf; s_cauchy_cdf; s_cauchy_inverse_cdf;
+    location: f64; scale: f64
+);
+
+define_continuous_dist_functions!(
+    Chi; s_chi_pdf; s_chi_cdf; s_chi_inverse_cdf;
+    freedom: u64
+);
+
+define_continuous_dist_functions!(
+    ChiSquared; s_chi_squared_pdf; s_chi_squared_cdf; s_chi_squared_inverse_cdf;
+    freedom: f64
+);
+
+// The Dirac function doesn't have a PDF, only a CDF
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_dirac_cdf(s: ExSeries, v: f64)
+        -> Result<ExSeries, ExplorerError> {
+    let dist = Dirac::new(v).unwrap();
+    let s1 = s.f64()?.apply_values(|x| dist.cdf(x)).into();
+    Ok(ExSeries::new(s1))
+}
+
+#[rustler::nif(schedule = "DirtyCpu")]
+pub fn s_dirac_inverse_cdf(s: ExSeries, v: f64)
+        -> Result<ExSeries, ExplorerError> {
+    let dist = Dirac::new(v).unwrap();
+    let s1 = s.f64()?.apply_values(|x| dist.inverse_cdf(x)).into();
+    Ok(ExSeries::new(s1))
+}
+
+define_continuous_dist_functions!(
+    Erlang; s_erlang_pdf; s_erlang_cdf; s_erlang_inverse_cdf;
+    shape: u64; rate: f64
+);
+
+define_continuous_dist_functions!(
+    Exp; s_exp_pdf; s_exp_cdf; s_exp_inverse_cdf;
+    rate: f64
+);
+
+define_continuous_dist_functions!(
+    FisherSnedecor;
+    s_fisher_snedecor_pdf; s_fisher_snedecor_cdf; s_fisher_snedecor_inverse_cdf;
+    freedom_1: f64; freedom_2: f64
+);
+
+define_continuous_dist_functions!(
+    Gamma;
+    s_gamma_pdf; s_gamma_cdf; s_gamma_inverse_cdf;
+    shape: f64; rate: f64
+);
+
+define_continuous_dist_functions!(
+    Gumbel;
+    s_gumbel_pdf; s_gumbel_cdf; s_gumbel_inverse_cdf;
+    location: f64; scale: f64
+);
+
+define_continuous_dist_functions!(
+    InverseGamma;
+    s_inverse_gamma_pdf; s_inverse_gamma_cdf; s_inverse_gamma_inverse_cdf;
+    shape: f64; rate: f64
+);
+
+define_continuous_dist_functions!(
+    Laplace;
+    s_laplace_pdf; s_laplace_cdf; s_laplace_inverse_cdf;
+    location: f64; scale: f64
+);
+
+// #[rustler::nif(schedule = "DirtyCpu")]
+// pub fn s_beta_pdf(s: ExSeries, shape_a: f64, shape_b: f64)
+//         -> Result<ExSeries, ExplorerError> {
+//     let dist = Beta::new(shape_a, shape_b).unwrap();
+//     let s1 = s.f64()?.apply_values(|x| dist.pdf(x)).into();
+//     Ok(ExSeries::new(s1))
+// }
+
+// #[rustler::nif(schedule = "DirtyCpu")]
+// pub fn s_beta_cdf(s: ExSeries, shape_a: f64, shape_b: f64)
+//         -> Result<ExSeries, ExplorerError> {
+//     let dist = Beta::new(shape_a, shape_b).unwrap();
+//     let s1 = s.f64()?.apply_values(|x| dist.cdf(x)).into();
+//     Ok(ExSeries::new(s1))
+// }
+
+// #[rustler::nif(schedule = "DirtyCpu")]
+// pub fn s_beta_inverse_cdf(s: ExSeries, shape_a: f64, shape_b: f64)
+//         -> Result<ExSeries, ExplorerError> {
+//     let dist = Beta::new(shape_a, shape_b).unwrap();
+//     let s1 = s.f64()?.apply_values(|x| dist.inverse_cdf(x)).into();
+//     Ok(ExSeries::new(s1))
+// }

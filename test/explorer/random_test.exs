@@ -28,10 +28,10 @@ defmodule Explorer.RandomTest do
     df = Random.draw_from_normal(0.0, 1.0, 5)
 
     assert Series.to_list(df[:x]) == [
-      1.5517820245173133,
+      1.5517820245173137,
       1.321939712924412,
       0.02191481628203684,
-      -0.855217344052458,
+      -0.8552173440524576,
       0.6105857073818864
     ]
   end
@@ -80,41 +80,48 @@ defmodule Explorer.RandomTest do
     end
   end
 
-  property "draw_from_dirichlet is reproducible if the seed is set" do
-    check all seed <- random_seed_gen(),
-              nr_of_draws <- StreamData.integer(0..20_000),
-              alphas <- StreamData.list_of(StreamData.float(min: 0.1),
-                                           min_length: 2,
-                                           max_length: 32) do
-      # Set up a seed to make things reproducible
-      :rand.seed(:exro928ss, seed)
-      df1 = Random.draw_from_dirichlet(alphas, nr_of_draws)
+  # # Skip this test until we re-implement the dirichlet distribution
+  # # from the distributions in `statrs` (previously it was implemented
+  # # with the distributions from `rand_dist`)
+  # property "draw_from_dirichlet is reproducible if the seed is set" do
+  #   check all seed <- random_seed_gen(),
+  #             nr_of_draws <- StreamData.integer(0..20_000),
+  #             alphas <- StreamData.list_of(StreamData.float(min: 0.1),
+  #                                          min_length: 2,
+  #                                          max_length: 32) do
+  #     # Set up a seed to make things reproducible
+  #     :rand.seed(:exro928ss, seed)
+  #     df1 = Random.draw_from_dirichlet(alphas, nr_of_draws)
 
-      # Draw more numbers and discard them
-      _discard = Random.draw_from_dirichlet(alphas, :rand.uniform(1000))
+  #     # Draw more numbers and discard them
+  #     _discard = Random.draw_from_dirichlet(alphas, :rand.uniform(1000))
 
-      # Set up a new seed and draw more random numbers
-      :rand.seed(:exro928ss, seed)
-      df2 = Random.draw_from_dirichlet(alphas, nr_of_draws)
+  #     # Set up a new seed and draw more random numbers
+  #     :rand.seed(:exro928ss, seed)
+  #     df2 = Random.draw_from_dirichlet(alphas, nr_of_draws)
 
-      # The values should be equal
-      assert dataframe_all_equal(df1, df2)
-    end
-  end
+  #     # The values should be equal
+  #     assert dataframe_all_equal(df1, df2)
+  #   end
+  # end
 
-  property "draw_from_dirichlet generated variables x1, x2, ... xn" do
-    check all nr_of_draws <- StreamData.integer(0..5),
-              alphas <- StreamData.list_of(StreamData.float(min: 0.1),
-                                           min_length: 2,
-                                           max_length: 32) do
+  # # Skip this test until we re-implement the dirichlet distribution
+  # # from the distributions in `statrs` (previously it was implemented
+  # # with the distributions from `rand_dist`)
+  # @tag skip: true
+  # property "draw_from_dirichlet generated variables x1, x2, ... xn" do
+  #   check all nr_of_draws <- StreamData.integer(0..5),
+  #             alphas <- StreamData.list_of(StreamData.float(min: 0.1),
+  #                                          min_length: 2,
+  #                                          max_length: 32) do
 
-      df = Random.draw_from_dirichlet(alphas, nr_of_draws)
+  #     df = Random.draw_from_dirichlet(alphas, nr_of_draws)
 
-      expected_columns = ["draw"] ++ (for i <- 1..length(alphas), do: "x#{i}")
+  #     expected_columns = ["draw"] ++ (for i <- 1..length(alphas), do: "x#{i}")
 
-      assert DataFrame.names(df) == expected_columns
-    end
-  end
+  #     assert DataFrame.names(df) == expected_columns
+  #   end
+  # end
 
   # Tests that check for problems with numerical accuracy
 

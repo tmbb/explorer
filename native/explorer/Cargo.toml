@@ -20,8 +20,8 @@ rand_pcg = "0.3"
 rustler = { version = "0.34.0" }
 thiserror = "1"
 either = "1"
-rand_distr = "0.4.3"
 rand_chacha = "0.3.1"
+statrs = { version = "0.18.0", features = ["rand"] }
 
 # Deps necessary for cloud features.
 tokio = { version = "1.40", default-features = false, features = [

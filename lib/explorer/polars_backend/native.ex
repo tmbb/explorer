@@ -175,20 +175,29 @@ defmodule Explorer.PolarsBackend.Native do
   # Distributions
 
   # Univariate distributions
-  def df_draw_from_normal(_seed, _mu, _sigma, _nr_of_draws), do: err()
   def df_draw_from_beta(_seed, _a, _b, _nr_of_draws), do: err()
-  def df_draw_from_skew_normal(_seed, _loc, _scale, _shape, _nr_of_draws), do: err()
   def df_draw_from_cauchy(_seed, _median, _scale, _nr_of_draws), do: err()
-  def df_draw_from_geometric(_seed, _p, _nr_of_draws), do: err()
-  def df_draw_from_hypergeometric(_seed, _pop_size, _success_states, _sample_size, _nr_of_draws), do: err()
+  def df_draw_from_chi(_seed, _freedom, _nr_of_draws), do: err()
+  def df_draw_from_chi_squared(_seed, _freedom, _nr_of_draws), do: err()
+  def df_draw_from_dirac(_seed, _v, _nr_of_draws), do: err()
+  def df_draw_from_erlang(_seed, _shape, _rate, _nr_of_draws), do: err()
+  def df_draw_from_exp(_seed, _rate, _nr_of_draws), do: err()
+  def df_draw_from_fisher_snedecor(_seed, _freedom_1, _freedom_2, _nr_of_draws), do: err()
+  def df_draw_from_gamma(_seed, _mean, _variance, _nr_of_draws), do: err()
+  def df_draw_from_gumbel(_seed, _location, _scale, _nr_of_draws), do: err()
+  def df_draw_from_inverse_gamma(_seed, _shape, _rate, _nr_of_draws), do: err()
+  def df_draw_from_laplace(_seed, _location, _scale, _nr_of_draws), do: err()
   def df_draw_from_log_normal(_seed, _mean, _variance, _nr_of_draws), do: err()
+  def df_draw_from_negative_binomial(_seed, _r, _p, _nr_of_draws), do: err()
+  def df_draw_from_normal(_seed, _mu, _sigma, _nr_of_draws), do: err()
+  def df_draw_from_pareto(_seed, _scale, _shape, _nr_of_draws), do: err()
+  def df_draw_from_students_t(_seed, _location, _scale, _freedom, _nr_of_draws), do: err()
+  def df_draw_from_triangular(_seed, _min, _max, _mode, _nr_of_draws), do: err()
+  def df_draw_from_uniform(_seed, _min, _max, _nr_of_draws), do: err()
+  def df_draw_from_weibull(_seed, _shape, _scale, _nr_of_draws), do: err()
 
-  # Multivariate distributions
-  def df_draw_from_dirichlet(_seed, _alphas, _nr_of_draws), do: err()
-  def df_draw_from_unit_sphere(_seed, _nr_of_draws), do: err()
-  def df_draw_from_unit_ball(_seed, _nr_of_draws), do: err()
-  def df_draw_from_unit_circle(_seed, _nr_of_draws), do: err()
-  def df_draw_from_unit_disc(_seed, _nr_of_draws), do: err()
+  # # Multivariate distributions
+  # def df_draw_from_dirichlet(_seed, _alphas, _nr_of_draws), do: err()
 
   # Expressions (for lazy queries)
   @multi_arity_expressions [slice: 2, slice: 3, log: 1, log: 2]
@@ -500,6 +509,56 @@ defmodule Explorer.PolarsBackend.Native do
   def s_field(_s, _name), do: err()
   def s_json_decode(_s, _dtype), do: err()
   def s_json_path_match(_s, _json_path), do: err()
+
+  # Statistical functions
+
+  def s_beta_pdf(_s, _shape_a, _shape_b), do: err()
+  def s_beta_cdf(_s, _shape_a, _shape_b), do: err()
+  def s_beta_inverse_cdf(_s, _shape_a, _shape_b), do: err()
+
+  def s_cauchy_pdf(_s, _location, _scale), do: err()
+  def s_cauchy_cdf(_s, _location, _scale), do: err()
+  def s_cauchy_inverse_cdf(_s, _location, _scale), do: err()
+
+  def s_chi_pdf(_s, _freedom), do: err()
+  def s_chi_cdf(_s, _freedom), do: err()
+  def s_chi_inverse_cdf(_s, _freedom), do: err()
+
+  def s_chi_squared_pdf(_s, _freedom), do: err()
+  def s_chi_squared_cdf(_s, _freedom), do: err()
+  def s_chi_squared_inverse_cdf(_s, _freedom), do: err()
+
+  # The Dirac distribution doesn't have a PDF
+  def s_dirac_cdf(_s, _v), do: err()
+  def s_dirac_inverse_cdf(_s, _v), do: err()
+
+  def s_erlang_pdf(_s, _shape, _rate), do: err()
+  def s_erlang_cdf(_s, _shape, _rate), do: err()
+  def s_erlang_inverse_cdf(_s, _shape, _rate), do: err()
+
+  def s_exp_pdf(_s, _rate), do: err()
+  def s_exp_cdf(_s, _rate), do: err()
+  def s_exp_inverse_cdf(_s, _rate), do: err()
+
+  def s_fisher_snedecor_pdf(_s, _freedom_1, _freedom_2), do: err()
+  def s_fisher_snedecor_cdf(_s, _freedom_1, _freedom_2), do: err()
+  def s_fisher_snedecor_inverse_cdf(_s, _freedom_1, _freedom_2), do: err()
+
+  def s_gamma_pdf(_s, _shape, _rate), do: err()
+  def s_gamma_cdf(_s, _shape, _rate), do: err()
+  def s_gamma_inverse_cdf(_s, _shape, _rate), do: err()
+
+  def s_gumbel_pdf(_s, _location, _scale), do: err()
+  def s_gumbel_cdf(_s, _location, _scale), do: err()
+  def s_gumbel_inverse_cdf(_s, _location, _scale), do: err()
+
+  def s_inverse_gamma_pdf(_s, _shape, _rate), do: err()
+  def s_inverse_gamma_cdf(_s, _shape, _rate), do: err()
+  def s_inverse_gamma_inverse_cdf(_s, _shape, _rate), do: err()
+
+  def s_laplace_pdf(_s, _location, _scale), do: err()
+  def s_laplace_cdf(_s, _location, _scale), do: err()
+  def s_laplace_inverse_cdf(_s, _location, _scale), do: err()
 
   def message_on_gc(_pid, _payload), do: err()
   def is_message_on_gc(_term), do: err()
